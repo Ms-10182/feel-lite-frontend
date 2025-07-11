@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "jsx": "react-jsx",
+    "moduleResolution": "Node",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "noEmit": true, // <-- ✅ Tells TypeScript not to emit JS files (Vite handles this)
+    "allowSyntheticDefaultImports": true
+  },
+  "include": ["src"], // <-- ✅ Include only your source files
+  "exclude": ["dist", "node_modules"] // <-- ✅ Exclude build & dependencies
+}
