@@ -187,7 +187,7 @@ const Settings: React.FC = () => {
       } catch (error) {
         console.error('Delete account error:', error)
         // Error handled in hook, but let's also show a specific error
-        if (error?.message?.includes('password')) {
+        if (error instanceof Error && error.message.includes('password')) {
           toast.error('Invalid password. Please try again.')
         }
       }

@@ -141,14 +141,14 @@ export interface ChangePasswordData {
 }
 
 export interface LoginFormData {
-  usernameOrEmail: string
+  email: string
   password: string
 }
 
 export interface RegisterFormData {
-  username: string
   email: string
   password: string
+  age: number
 }
 
 export interface LikedPost {

@@ -4,6 +4,7 @@ import CommentItem from './CommentItem'
 import CommentForm from './CommentForm'
 import LoadingSpinner from '../ui/LoadingSpinner'
 import { Button } from '../ui/Button'
+import type { Comment } from '../../types'
 
 interface CommentSectionProps {
   postId: string
@@ -49,7 +50,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId, postOwnerId }) 
 
       {/* Comments List */}
       <div className="mt-6 space-y-4">
-        {comments.map((comment) => (
+        {comments.map((comment: Comment) => (
           <CommentItem 
             key={comment._id} 
             comment={comment} 
