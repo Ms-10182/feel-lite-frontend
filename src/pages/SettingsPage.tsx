@@ -21,7 +21,7 @@ import {
   useLogout, 
   useLogoutFromAllDevices, 
   useDeleteAccount,
-  useGenerateOtp
+  useGenerateAuthOtp
 } from '../hooks/useSettings'
 import { useUpdateAvatar, useUpdateCoverImage, useChangeUsername } from '../hooks/useProfile'
 import { Button } from '../components/ui/Button'
@@ -65,7 +65,7 @@ const Settings: React.FC = () => {
   const logoutMutation = useLogout()
   const logoutAllMutation = useLogoutFromAllDevices()
   const deleteAccountMutation = useDeleteAccount()
-  const generateOtpMutation = useGenerateOtp()
+  const generateOtpMutation = useGenerateAuthOtp()
 
   // Avatar and cover image options
   const avatarOptions = Array.from({ length: 10 }, (_, i) => 

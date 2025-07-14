@@ -18,11 +18,11 @@ export function useGetUser() {
   })
 }
 
-// Generate OTP
-export function useGenerateOtp() {
+// Generate OTP for authenticated users
+export function useGenerateAuthOtp() {
   return useMutation({
     mutationFn: async () => {
-      const response = await api.post<any>('/users/generateOtp')
+      const response = await api.post<any>('/users/auth/generateOtp')
       return response.data
     },
     onSuccess: (data) => {
@@ -30,6 +30,46 @@ export function useGenerateOtp() {
     },
     onError: (error: any) => {
       const message = error.response?.data?.message || 'Failed to generate OTP'
+      toast.error(message)
+    },
+  })
+}
+
+// Generate OTP for unauthenticated users (like forgot password)
+export function useGenerateUnauthOtp() {
+  return useMutation({
+    mutationFn: async (email: string) => {
+      const response = await api.post<any>('/users/unauth/generateOtp', { email })
+      return response.data
+    },
+    onSuccess: (data) => {
+      toast.success(data?.message || 'OTP sent to your email!')
+    },
+    onError: (error: any) => {
+      const message = error.response?.data?.message || 'Failed to generate OTP'
+      toast.error(message)
+    },
+  })
+}
+
+// Forgot password with OTP
+export function useForgotPassword() {
+  return useMutation({
+    mutationFn: async ({ email, otp, newPassword }: { email: string; otp: string; newPassword: string }) => {
+      const response = await api.post<any>('/users/forgotPassword', {
+        email,
+        otp,
+        newPassword
+      })
+      return response.data
+    },
+    onSuccess: (data) => {
+      toast.success(data?.message || 'Password reset successfully!')
+      // Redirect to login page
+      window.location.href = '/login'
+    },
+    onError: (error: any) => {
+      const message = error.response?.data?.message || 'Failed to reset password'
       toast.error(message)
     },
   })

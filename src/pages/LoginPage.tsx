@@ -116,11 +116,16 @@ const LoginPage: React.FC = () => {
           </form>
 
           {/* Footer */}
-          <div className="mt-6 text-center">
+          <div className="mt-6 space-y-4 text-center">
             <p className="text-muted-foreground">
               Don't have an account?{' '}
               <Link to="/register" className="text-primary hover:text-primary/80 font-medium">
                 Sign up
+              </Link>
+            </p>
+            <p className="text-sm">
+              <Link to="/forgot-password" className="text-primary hover:text-primary/80 font-medium">
+                Forgot your password?
               </Link>
             </p>
           </div>
