@@ -18,14 +18,32 @@ export function useGetUser() {
   })
 }
 
+// Generate OTP
+export function useGenerateOtp() {
+  return useMutation({
+    mutationFn: async () => {
+      const response = await api.post<any>('/users/generateOtp')
+      return response.data
+    },
+    onSuccess: (data) => {
+      toast.success(data?.message || 'OTP sent to your email!')
+    },
+    onError: (error: any) => {
+      const message = error.response?.data?.message || 'Failed to generate OTP'
+      toast.error(message)
+    },
+  })
+}
+
 // Change email
 export function useChangeEmail() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (newEmail: string) => {
+    mutationFn: async ({ newEmail, otp }: { newEmail: string; otp: string }) => {
       const response = await api.patch<any>('/users/updateAccountDetails', {
-        newEmail
+        newEmail,
+        otp
       })
       return response.data
     },
@@ -43,10 +61,11 @@ export function useChangeEmail() {
 // Change password
 export function useChangePassword() {
   return useMutation({
-    mutationFn: async ({ oldPassword, newPassword }: { oldPassword: string; newPassword: string }) => {
+    mutationFn: async ({ oldPassword, newPassword, otp }: { oldPassword: string; newPassword: string; otp: string }) => {
       const response = await api.patch<any>('/users/changePassword', {
         oldPassword,
-        newPassword
+        newPassword,
+        otp
       })
       return response.data
     },
@@ -101,10 +120,9 @@ export function useLogoutFromAllDevices() {
 // Delete account
 export function useDeleteAccount() {
   return useMutation({
-    mutationFn: async (password: string) => {
-      // Send body: { password: "pass" } directly
+    mutationFn: async ({ password, otp }: { password: string; otp: string }) => {
       const response = await api.delete<any>('/users/deleteAccount', {
-        password
+        password,otp
       })
       return response.data
     },

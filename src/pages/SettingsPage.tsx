@@ -20,7 +20,8 @@ import {
   useChangePassword, 
   useLogout, 
   useLogoutFromAllDevices, 
-  useDeleteAccount 
+  useDeleteAccount,
+  useGenerateOtp
 } from '../hooks/useSettings'
 import { useUpdateAvatar, useUpdateCoverImage, useChangeUsername } from '../hooks/useProfile'
 import { Button } from '../components/ui/Button'
@@ -40,14 +41,17 @@ const Settings: React.FC = () => {
   const [showEmailModal, setShowEmailModal] = useState(false)
   const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
-  const [deleteStep, setDeleteStep] = useState(1) // 1: first confirm, 2: second confirm, 3: password entry
+  const [deleteStep, setDeleteStep] = useState(1) // 1: first confirm, 2: second confirm, 3: generate OTP, 4: enter OTP + password
   
   // Form states
   const [newEmail, setNewEmail] = useState('')
+  const [emailOtp, setEmailOtp] = useState('')
   const [oldPassword, setOldPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [passwordOtp, setPasswordOtp] = useState('')
   const [deletePassword, setDeletePassword] = useState('')
+  const [deleteOtp, setDeleteOtp] = useState('')
   const [showOldPassword, setShowOldPassword] = useState(false)
   const [showNewPassword, setShowNewPassword] = useState(false)
   const [showDeletePassword, setShowDeletePassword] = useState(false)
@@ -61,6 +65,7 @@ const Settings: React.FC = () => {
   const logoutMutation = useLogout()
   const logoutAllMutation = useLogoutFromAllDevices()
   const deleteAccountMutation = useDeleteAccount()
+  const generateOtpMutation = useGenerateOtp()
 
   // Avatar and cover image options
   const avatarOptions = Array.from({ length: 10 }, (_, i) => 
@@ -77,11 +82,28 @@ const Settings: React.FC = () => {
       return
     }
     
+    if (!emailOtp.trim()) {
+      toast.error('Please enter the OTP')
+      return
+    }
+    
     try {
-      await changeEmailMutation.mutateAsync(newEmail)
-      setShowEmailModal(false)
-      setNewEmail('')
+      await changeEmailMutation.mutateAsync({ newEmail, otp: emailOtp })
+      resetEmailModal()
       refetchUser()
+    } catch (error) {
+      // Error handled in hook
+    }
+  }
+
+  const handleGenerateEmailOtp = async () => {
+    if (!newEmail.trim()) {
+      toast.error('Please enter a valid email first')
+      return
+    }
+    
+    try {
+      await generateOtpMutation.mutateAsync()
     } catch (error) {
       // Error handled in hook
     }
@@ -103,12 +125,14 @@ const Settings: React.FC = () => {
       return
     }
     
+    if (!passwordOtp.trim()) {
+      toast.error('Please enter the OTP')
+      return
+    }
+    
     try {
-      await changePasswordMutation.mutateAsync({ oldPassword, newPassword })
-      setShowPasswordModal(false)
-      setOldPassword('')
-      setNewPassword('')
-      setConfirmPassword('')
+      await changePasswordMutation.mutateAsync({ oldPassword, newPassword, otp: passwordOtp })
+      resetPasswordModal()
     } catch (error) {
       // Error handled in hook
     }
@@ -163,11 +187,25 @@ const Settings: React.FC = () => {
     } else if (deleteStep === 2) {
       setDeleteStep(3)
     } else if (deleteStep === 3) {
-      // Enhanced password validation
+      // Generate OTP step
+      try {
+        await generateOtpMutation.mutateAsync()
+        setDeleteStep(4) // Move to password + OTP entry step
+      } catch (error) {
+        // Error handled in hook
+      }
+    } else if (deleteStep === 4) {
+      // Password + OTP validation step
       const password = deletePassword.trim()
+      const otp = deleteOtp.trim()
       
       if (!password) {
         toast.error('Please enter your password to confirm deletion')
+        return
+      }
+      
+      if (!otp) {
+        toast.error('Please enter the OTP sent to your email')
         return
       }
       
@@ -176,19 +214,19 @@ const Settings: React.FC = () => {
         return
       }
       
-      console.log('Attempting to delete account with password:', password ? 'Password provided' : 'No password')
+      console.log('Attempting to delete account with password and OTP')
       
       try {
-        await deleteAccountMutation.mutateAsync(password)
-        setShowDeleteModal(false)
-        setDeleteStep(1)
-        setDeletePassword('')
+        await deleteAccountMutation.mutateAsync({ password, otp })
+        resetDeleteModal()
         toast.success('Account deleted successfully')
       } catch (error) {
         console.error('Delete account error:', error)
         // Error handled in hook, but let's also show a specific error
         if (error instanceof Error && error.message.includes('password')) {
           toast.error('Invalid password. Please try again.')
+        } else if (error instanceof Error && error.message.includes('otp')) {
+          toast.error('Invalid OTP. Please try again.')
         }
       }
     }
@@ -198,6 +236,21 @@ const Settings: React.FC = () => {
     setShowDeleteModal(false)
     setDeleteStep(1)
     setDeletePassword('')
+    setDeleteOtp('')
+  }
+
+  const resetEmailModal = () => {
+    setShowEmailModal(false)
+    setNewEmail('')
+    setEmailOtp('')
+  }
+
+  const resetPasswordModal = () => {
+    setShowPasswordModal(false)
+    setOldPassword('')
+    setNewPassword('')
+    setConfirmPassword('')
+    setPasswordOtp('')
   }
 
   // Check if delete password is valid
@@ -457,7 +510,7 @@ const Settings: React.FC = () => {
       {/* Email Change Modal */}
       <Modal
         isOpen={showEmailModal}
-        onClose={() => setShowEmailModal(false)}
+        onClose={resetEmailModal}
         title="Change Email Address"
       >
         <div className="p-4 space-y-4">
@@ -483,16 +536,39 @@ const Settings: React.FC = () => {
               placeholder="Enter new email address"
             />
           </div>
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">
+              OTP Code
+            </label>
+            <div className="flex gap-2">
+              <Input
+                type="text"
+                value={emailOtp}
+                onChange={(e) => setEmailOtp(e.target.value)}
+                placeholder="Enter OTP code"
+              />
+              <Button
+                variant="outline"
+                onClick={handleGenerateEmailOtp}
+                disabled={generateOtpMutation.isPending || !newEmail.trim()}
+              >
+                {generateOtpMutation.isPending ? <LoadingSpinner size="sm" /> : 'Generate OTP'}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Generate OTP first, then check your email for the code
+            </p>
+          </div>
           <div className="flex gap-2 justify-end">
             <Button
               variant="outline"
-              onClick={() => setShowEmailModal(false)}
+              onClick={resetEmailModal}
             >
               Cancel
             </Button>
             <Button
               onClick={handleEmailChange}
-              disabled={changeEmailMutation.isPending || !newEmail.trim()}
+              disabled={changeEmailMutation.isPending || !newEmail.trim() || !emailOtp.trim()}
             >
               {changeEmailMutation.isPending ? <LoadingSpinner size="sm" /> : 'Update Email'}
             </Button>
@@ -503,7 +579,7 @@ const Settings: React.FC = () => {
       {/* Password Change Modal */}
       <Modal
         isOpen={showPasswordModal}
-        onClose={() => setShowPasswordModal(false)}
+        onClose={resetPasswordModal}
         title="Change Password"
       >
         <div className="p-4 space-y-4">
@@ -558,16 +634,45 @@ const Settings: React.FC = () => {
               placeholder="Confirm new password"
             />
           </div>
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">
+              OTP Code
+            </label>
+            <div className="flex gap-2">
+              <Input
+                type="text"
+                value={passwordOtp}
+                onChange={(e) => setPasswordOtp(e.target.value)}
+                placeholder="Enter OTP code"
+              />
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  try {
+                    await generateOtpMutation.mutateAsync()
+                  } catch (error) {
+                    // Error handled in hook
+                  }
+                }}
+                disabled={generateOtpMutation.isPending}
+              >
+                {generateOtpMutation.isPending ? <LoadingSpinner size="sm" /> : 'Generate OTP'}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Generate OTP first, then check your email for the code
+            </p>
+          </div>
           <div className="flex gap-2 justify-end">
             <Button
               variant="outline"
-              onClick={() => setShowPasswordModal(false)}
+              onClick={resetPasswordModal}
             >
               Cancel
             </Button>
             <Button
               onClick={handlePasswordChange}
-              disabled={changePasswordMutation.isPending || !oldPassword || !newPassword || !confirmPassword}
+              disabled={changePasswordMutation.isPending || !oldPassword || !newPassword || !confirmPassword || !passwordOtp.trim()}
             >
               {changePasswordMutation.isPending ? <LoadingSpinner size="sm" /> : 'Change Password'}
             </Button>
@@ -628,12 +733,38 @@ const Settings: React.FC = () => {
 
           {deleteStep === 3 && (
             <div className="space-y-4">
+              <div className="flex items-center gap-3 p-4 bg-info/10 border border-info/30 rounded-lg">
+                <Mail className="h-6 w-6 text-info flex-shrink-0" />
+                <div>
+                  <h3 className="font-medium text-info">Generate OTP</h3>
+                  <p className="text-sm text-muted-foreground">
+                    We'll send a verification code to your email address.
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" onClick={resetDeleteModal}>
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteAccount}
+                  disabled={generateOtpMutation.isPending}
+                >
+                  {generateOtpMutation.isPending ? <LoadingSpinner size="sm" /> : 'Send OTP'}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {deleteStep === 4 && (
+            <div className="space-y-4">
               <div className="flex items-center gap-3 p-4 bg-destructive/10 border border-destructive/30 rounded-lg">
                 <Lock className="h-6 w-6 text-destructive flex-shrink-0" />
                 <div>
-                  <h3 className="font-medium text-destructive">Enter Your Password</h3>
+                  <h3 className="font-medium text-destructive">Enter Password & OTP</h3>
                   <p className="text-sm text-muted-foreground">
-                    Please enter your current password to confirm account deletion.
+                    Please enter your password and the OTP code sent to your email.
                   </p>
                 </div>
               </div>
@@ -657,10 +788,17 @@ const Settings: React.FC = () => {
                     {showDeletePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
-                {/* Debug info - remove in production */}
-                <p className="text-xs text-muted-foreground mt-1">
-                  Password length: {deletePassword.length}, Valid: {isDeletePasswordValid ? 'Yes' : 'No'}
-                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  OTP Code
+                </label>
+                <Input
+                  type="text"
+                  value={deleteOtp}
+                  onChange={(e) => setDeleteOtp(e.target.value)}
+                  placeholder="Enter OTP code from email"
+                />
               </div>
               <div className="flex gap-2 justify-end">
                 <Button variant="outline" onClick={resetDeleteModal}>
@@ -669,7 +807,7 @@ const Settings: React.FC = () => {
                 <Button
                   variant="destructive"
                   onClick={handleDeleteAccount}
-                  disabled={deleteAccountMutation.isPending || !isDeletePasswordValid}
+                  disabled={deleteAccountMutation.isPending || !deletePassword.trim() || !deleteOtp.trim()}
                 >
                   {deleteAccountMutation.isPending ? (
                     <LoadingSpinner size="sm" />

@@ -14,6 +14,7 @@ export default defineConfig({
     proxy: {
       '/api': {
         target: 'http://localhost:8080',
+        // target: 'http://57.159.27.100:8080',
         changeOrigin: true,
         secure: false,           // if your backend is self-signed HTTPS
         rewrite: path => path.replace(/^\/api/, ''), // optional: strip `/api`
