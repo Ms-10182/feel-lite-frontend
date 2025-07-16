@@ -5,10 +5,14 @@ export const loginSchema = z.object({
   password: z.string().min(1, 'Password is required'),
 })
 
-export const registerSchema = z.object({
+export const registerDetailsSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
   age: z.number().min(16, 'You must be at least 16 years old'),
+})
+
+export const registerSchema = registerDetailsSchema.extend({
+  otp: z.string().length(6, 'OTP must be 6 digits')
 })
 
 export const postSchema = z.object({

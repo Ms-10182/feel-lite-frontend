@@ -87,14 +87,37 @@ export function useAddToBookmark() {
 
   return useMutation({
     mutationFn: async ({ postId, bookMarkId }: { postId: string; bookMarkId: string }) => {
-      await api.post('/bookmarks/add/post', { postId, bookMarkId })
+      const response = await api.post<{ post: Post }>('/bookmarks/add/post', { postId, bookMarkId })
+      return response.data.post
     },
-    onSuccess: () => {
+    onSuccess: (_updatedPost, variables) => {
       // Invalidate bookmarks queries
       queryClient.invalidateQueries({ queryKey: ['bookmarks'] })
       
-      // Also invalidate posts queries to update the isBookmarked status
-      queryClient.invalidateQueries({ queryKey: ['posts'] })
+      // Update all queries that might contain this post
+      queryClient.setQueriesData(
+        { predicate: (query) => {
+          const queryKey = query.queryKey[0]
+          return ['posts', 'trending-posts', 'user-posts', 'bookmarked-posts', 'liked-posts'].includes(String(queryKey))
+        }},
+        (oldData: any) => {
+          if (!oldData?.pages || !Array.isArray(oldData.pages)) return oldData
+          
+          return {
+            ...oldData,
+            pages: oldData.pages.map((page: any) => ({
+              ...page,
+              docs: Array.isArray(page.docs) 
+                ? page.docs.map((post: any) => 
+                    post._id === variables.postId
+                      ? { ...post, isBookmarked: true }
+                      : post
+                  )
+                : page.docs
+            }))
+          }
+        }
+      )
       
       toast.success('Post added to bookmark!')
     },

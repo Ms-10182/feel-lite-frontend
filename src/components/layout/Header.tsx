@@ -17,6 +17,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, onToggleSidebar, sidebarCo
   const { user } = useAuth()
   const [showUserDropdown, setShowUserDropdown] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [showTooltip, setShowTooltip] = useState(false)
   const navigate = useNavigate()
 
   return (
@@ -96,11 +97,31 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, onToggleSidebar, sidebarCo
         <div className="flex items-center space-x-2">
           <ThemeToggle className="hidden sm:flex" />
           
-          <Button variant="ghost" size="icon" className="hidden sm:flex">
-            <Bell className="h-5 w-5" />
-          </Button>
+          <div className="relative hidden sm:block">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onMouseEnter={() => setShowTooltip(true)}
+              onMouseLeave={() => setShowTooltip(false)}
+            >
+              <Bell className="h-5 w-5" />
+            </Button>
+            {showTooltip && (
+              <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2 px-3 py-2 bg-popover text-popover-foreground rounded-lg shadow-lg border border-border">
+                <div className="relative">
+                  <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-popover rotate-45 border-t border-l border-border"></div>
+                  <span className="whitespace-nowrap text-sm font-medium">Coming Soon!</span>
+                </div>
+              </div>
+            )}
+          </div>
           
-          <Button variant="ghost" size="icon" className="hidden sm:flex">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="hidden sm:flex"
+            onClick={() => navigate('/')}
+          >
             <Plus className="h-5 w-5" />
           </Button>
           

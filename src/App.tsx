@@ -46,6 +46,7 @@ function App() {
         <Route path="/hashtag" element={<HashtagPage />} />
         <Route path="/hashtag/:tag" element={<HashtagPage />} />
         <Route path="/trending" element={<HashtagPage trendingMode />} />
+        <Route path="/post/:postId" element={<HomePage />} />
         <Route path="/settings" element={<SettingsPage />} />
         {user.role === 'admin' && (
           <Route path="/admin" element={<AdminPage />} />

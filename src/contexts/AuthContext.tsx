@@ -10,6 +10,7 @@ interface AuthContextType {
   authError: string | null
   login: (data: LoginFormData) => Promise<void>
   register: (data: RegisterFormData) => Promise<void>
+  generateOtp: (email: string, isRegistration?: boolean) => Promise<void>
   logout: () => Promise<void>
   logoutEverywhere: () => Promise<void>
   refetchUser: () => void
@@ -113,9 +114,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [authError]);
 
+  const generateOtp = async (email: string, isRegistration: boolean = false) => {
+    try {
+      await api.post('/users/unauth/generateOtp', { email, isRegistration })
+      toast.success('OTP sent to your email')
+    } catch (error: any) {
+      const message = error.response?.data?.message || 'Failed to send OTP'
+      toast.error(message)
+      throw error
+    }
+  }
+
   const login = async (data: LoginFormData) => {
     try {
       const response = await api.post<AuthResponse>('/users/login', data)
+      localStorage.setItem('accessToken', response.data.accessToken)
+      localStorage.setItem('refreshToken', response.data.refreshToken)
       queryClient.setQueryData(['user'], response.data.user)
       toast.success('Welcome back!')
     } catch (error: any) {
@@ -127,8 +141,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const register = async (data: RegisterFormData) => {
     try {
-      await api.post('/users/register', data)
-      toast.success('Account created successfully! Please log in.')
+      const response = await api.post<AuthResponse>('/users/register', data)
+      localStorage.setItem('accessToken', response.data.accessToken)
+      localStorage.setItem('refreshToken', response.data.refreshToken)
+      queryClient.setQueryData(['user'], response.data.user)
+      toast.success('Account created successfully!')
     } catch (error: any) {
       const message = error.response?.data?.message || 'Registration failed'
       toast.error(message)
@@ -171,6 +188,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         authError,
         login,
         register,
+        generateOtp,
         logout,
         logoutEverywhere,
         refetchUser,

@@ -6,17 +6,17 @@
   :root {
     /* Light Mode - Modern Gradient Harmony Palette */
     --background: 0 0% 100%; /* Pure White #FFFFFF */
-    --foreground: 215 28% 17%; /* Dark Navy #1E293B */
+    --foreground: 215 25% 13%; /* Darker Navy for better contrast #161F2D */
     --card: 210 40% 98%; /* Light Blue-Gray #F8FAFC */
-    --card-foreground: 215 28% 17%; /* Dark Navy #1E293B */
+    --card-foreground: 215 25% 13%; /* Darker Navy #161F2D */
     --popover: 0 0% 100%; /* Pure White #FFFFFF */
-    --popover-foreground: 215 28% 17%; /* Dark Navy #1E293B */
+    --popover-foreground: 215 25% 13%; /* Darker Navy #161F2D */
     --primary: 217 91% 60%; /* Deep Blue #3B82F6 */
     --primary-foreground: 0 0% 100%; /* White */
     --secondary: 262 83% 58%; /* Purple #8B5CF6 */
     --secondary-foreground: 0 0% 100%; /* White */
     --muted: 210 40% 98%; /* Light Blue-Gray #F8FAFC */
-    --muted-foreground: 215 20% 65%; /* Slate Gray #64748B */
+    --muted-foreground: 215 25% 40%; /* Darker Slate for better contrast #415775 */
     --accent: 43 96% 56%; /* Orange #F59E0B */
     --accent-foreground: 215 28% 17%; /* Dark Navy */
     --destructive: 0 84% 60%; /* Red #EF4444 */

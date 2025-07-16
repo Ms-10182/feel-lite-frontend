@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Sparkles, Globe } from 'lucide-react'
 import { useRecommendedPosts, useGlobalFeed, usePost } from '../hooks/usePosts'
 import PostCard from '../components/post/PostCard'
@@ -12,6 +12,18 @@ const HomePage: React.FC = () => {
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null)
   const [isViewModalOpen, setIsViewModalOpen] = useState(false)
   const [feedChanging, setFeedChanging] = useState(false)
+  
+  // Get postId from URL if this is a shared post link
+  const pathParts = window.location.pathname.split('/')
+  const sharedPostId = pathParts[1] === 'post' ? pathParts[2] : null
+
+  // Open shared post modal if postId is in URL
+  useEffect(() => {
+    if (sharedPostId) {
+      setSelectedPostId(sharedPostId)
+      setIsViewModalOpen(true)
+    }
+  }, [sharedPostId])
   
   // Handle feed type change with a smooth transition
   const handleFeedChange = (newFeedType: 'global' | 'recommended') => {
@@ -70,6 +82,11 @@ const HomePage: React.FC = () => {
   }
   
   const handleCloseModal = () => {
+    // If this is a shared post URL, navigate back to home
+    if (window.location.pathname.startsWith('/post/')) {
+      window.history.pushState({}, '', '/')
+    }
+    
     setIsViewModalOpen(false)
     // Wait for modal animation to complete before clearing post data
     setTimeout(() => setSelectedPostId(null), 300)

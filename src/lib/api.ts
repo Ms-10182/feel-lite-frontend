@@ -207,7 +207,7 @@ apiClient.interceptors.response.use(
     })
     
     if (error.response?.status >= 500) {
-      toast.error('Server error. Please try again later.')
+      // toast.error('Server error. Please try again later.')
     } else if (error.response?.status === 403) {
       toast.error('Access denied')
     } else if (error.response?.status === 404) {
