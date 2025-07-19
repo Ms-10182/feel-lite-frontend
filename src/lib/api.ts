@@ -3,7 +3,7 @@ import toast from 'react-hot-toast'
 import type { ApiResponse } from '../types'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL 
-// const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://57.159.27.100:8080/api/v1'
+// const API_BASE_URL = 'http://localhost:8080/api/v1'
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,

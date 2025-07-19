@@ -8,7 +8,7 @@ const MobileNav: React.FC = () => {
 
   const navItems = [
     { icon: Home, label: 'Home', path: '/' },
-    { icon: Hash, label: 'Explore', path: '/hashtag/trending' },
+    { icon: Hash, label: 'Trending', path: '/trending' },
     { icon: Bookmark, label: 'Bookmarks', path: '/bookmarks' },
     { icon: Heart, label: 'Liked', path: '/liked' },
     { icon: User, label: 'Profile', path: '/profile' },
