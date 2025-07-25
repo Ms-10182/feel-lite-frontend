@@ -1,9 +1,6 @@
-import React, { useState, useEffect } from 'react'
+import React, { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Image, X } from 'lucide-react'
-import { useDropzone } from 'react-dropzone'
-import toast from 'react-hot-toast'
 import { useUpdatePost } from '../../hooks/usePosts'
 import { postSchema, type PostFormData } from '../../lib/validations'
 import { Button } from '../ui/Button'
@@ -11,7 +8,6 @@ import { Textarea } from '../ui/Textarea'
 import { Input } from '../ui/Input'
 import Modal from '../ui/Modal'
 import LoadingSpinner from '../ui/LoadingSpinner'
-import { validateFileType, validateFileSize, formatFileSize } from '../../lib/utils'
 import type { Post } from '../../types'
 
 interface EditPostModalProps {
@@ -20,8 +16,7 @@ interface EditPostModalProps {
   onClose: () => void
 }
 
-const EditPostModal = ({ post, isOpen, onClose }: EditPostModalProps) => {
-  const [selectedImages, setSelectedImages] = useState<File[]>([])
+const SimpleEditPostModal: React.FC<EditPostModalProps> = ({ post, isOpen, onClose }) => {
   const updatePostMutation = useUpdatePost()
 
   const {
@@ -29,7 +24,6 @@ const EditPostModal = ({ post, isOpen, onClose }: EditPostModalProps) => {
     handleSubmit,
     formState: { errors, isValid },
     reset,
-    setValue,
     watch,
   } = useForm<PostFormData>({
     resolver: zodResolver(postSchema),
@@ -43,7 +37,6 @@ const EditPostModal = ({ post, isOpen, onClose }: EditPostModalProps) => {
 
   const content = watch('content')
 
-  // Reset form when post changes or modal opens
   useEffect(() => {
     if (isOpen && post) {
       reset({
@@ -51,45 +44,14 @@ const EditPostModal = ({ post, isOpen, onClose }: EditPostModalProps) => {
         tags: post.tags.join(', '),
         images: [],
       })
-      setSelectedImages([])
     }
   }, [isOpen, post, reset])
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    accept: {
-      'image/*': ['.png', '.jpg', '.jpeg', '.heic'],
-    },
-    maxFiles: 5,
-    onDrop: (acceptedFiles) => {
-      const validFiles = acceptedFiles.filter(file => {
-        if (!validateFileType(file)) {
-          return false
-        }
-        if (!validateFileSize(file)) {
-          return false
-        }
-        return true
-      })
-
-      const newImages = [...selectedImages, ...validFiles].slice(0, 5)
-      setSelectedImages(newImages)
-      setValue('images', newImages)
-    },
-  })
-
-  const removeImage = (index: number) => {
-    const newImages = selectedImages.filter((_, i) => i !== index)
-    setSelectedImages(newImages)
-    setValue('images', newImages)
-  }
 
   const onSubmit = async (data: PostFormData) => {
     const trimmedContent = data.content?.trim()
     if (!trimmedContent) {
       return
     }
-
-    // Simple approach - just send the data directly
     try {
       await updatePostMutation.mutateAsync({
         postId: post._id,
@@ -100,11 +62,9 @@ const EditPostModal = ({ post, isOpen, onClose }: EditPostModalProps) => {
       })
       onClose()
     } catch (error) {
-      console.error('Error updating post:', error)
       // Error handling is done in the hook
     }
   }
-  
 
   const handleClose = () => {
     reset({
@@ -112,7 +72,6 @@ const EditPostModal = ({ post, isOpen, onClose }: EditPostModalProps) => {
       tags: post.tags.join(', '),
       images: [],
     })
-    setSelectedImages([])
     onClose()
   }
 
@@ -141,7 +100,6 @@ const EditPostModal = ({ post, isOpen, onClose }: EditPostModalProps) => {
             </span>
           </div>
         </div>
-
         {/* Tags */}
         <div>
           <Input
@@ -149,7 +107,6 @@ const EditPostModal = ({ post, isOpen, onClose }: EditPostModalProps) => {
             {...register('tags')}
           />
         </div>
-
         {/* Current Images Display */}
         {post.images && post.images.length > 0 && (
           <div>
@@ -170,65 +127,6 @@ const EditPostModal = ({ post, isOpen, onClose }: EditPostModalProps) => {
             </p>
           </div>
         )}
-
-        {/* New Image Upload (Optional Feature) */}
-        {selectedImages.length === 0 && (
-          <div>
-            <h4 className="text-sm font-medium text-foreground mb-2">Add New Images (Optional)</h4>
-            <div
-              {...getRootProps()}
-              className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors ${
-                isDragActive 
-                  ? 'border-primary-400 bg-primary-50' 
-                  : 'border-input hover:border-ring'
-              }`}
-            >
-              <input {...getInputProps()} />
-              <Image className="mx-auto h-6 w-6 text-muted-foreground mb-2" />
-              <p className="text-sm text-foreground">
-                {isDragActive 
-                  ? 'Drop images here...' 
-                  : 'Drag & drop images, or click to select'
-                }
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Max 5 images, PNG/JPEG/HEIC, up to 10MB each
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Selected New Images */}
-        {selectedImages.length > 0 && (
-          <div>
-            <h4 className="text-sm font-medium text-foreground mb-2">New Images to Add</h4>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {selectedImages.map((file, index) => (
-                <div key={index} className="relative group">
-                  <img
-                    src={URL.createObjectURL(file)}
-                    alt={`Preview ${index + 1}`}
-                    className="w-full h-20 object-cover rounded-lg"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeImage(index)}
-                    className="absolute top-1 right-1 p-1 bg-destructive text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                  <div className="absolute bottom-1 left-1 px-1 py-0.5 bg-black/70 text-white text-xs rounded">
-                    {formatFileSize(file.size)}
-                  </div>
-                </div>
-              ))}
-            </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              Note: New image upload functionality is not yet implemented in the API. Only content and tags can be edited.
-            </p>
-          </div>
-        )}
-
         {/* Actions */}
         <div className="flex items-center justify-end space-x-3 pt-4 border-t border-border">
           <Button
@@ -238,7 +136,6 @@ const EditPostModal = ({ post, isOpen, onClose }: EditPostModalProps) => {
           >
             Cancel
           </Button>
-          
           <Button
             type="submit"
             disabled={updatePostMutation.isPending || !isValid || !content?.trim()}
@@ -258,5 +155,4 @@ const EditPostModal = ({ post, isOpen, onClose }: EditPostModalProps) => {
   )
 }
 
-
-export default EditPostModal
+export default SimpleEditPostModal

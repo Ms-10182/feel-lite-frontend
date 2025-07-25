@@ -10,6 +10,7 @@ import CommentSection from '../comment/CommentSection'
 import PostActions from './PostActions'
 import BookmarkModal from '../ui/BookmarkModal'
 import ShareModal from '../ui/ShareModal'
+import SimpleEditPostModal from './SimpleEditPostModal'
 import type { Post } from '../../types'
 
 interface PostCardProps {
@@ -26,6 +27,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onViewPost }) => {
   const [isLiked, setIsLiked] = useState(post.isLiked)
   const [likeCount, setLikeCount] = useState(post.totalLikes || 0)
   const [isBookmarked, setIsBookmarked] = useState(post.isBookmarked)
+  const [showEditModal, setShowEditModal] = useState(false)
   
   const toggleLikeMutation = useTogglePostLike()
 
@@ -39,44 +41,32 @@ const PostCard: React.FC<PostCardProps> = ({ post, onViewPost }) => {
   }, [post.isLiked, post.totalLikes, post.isBookmarked])
 
   const handleLike = async (e?: React.MouseEvent) => {
-    // Prevent event bubbling if event is provided
     if (e) {
       e.stopPropagation();
     }
-    
-    // Optimistic UI update
     setIsLiked(!isLiked);
     setLikeCount(prev => isLiked ? Math.max(0, prev - 1) : prev + 1);
-    
     try {
       await toggleLikeMutation.mutateAsync(post._id);
       console.log(`Successfully toggled like for post ${post._id}. New state: ${!isLiked}`);
     } catch (error) {
-      // Revert optimistic update on error
       console.error('Error toggling like:', error);
       setIsLiked(isLiked);
       setLikeCount(post.totalLikes || 0);
-      // Error toast is shown by the hook
     }
   }
 
   const handleBookmark = (e?: React.MouseEvent) => {
-    // Prevent event bubbling if event is provided
     if (e) {
       e.stopPropagation();
     }
-    
-    // Open the bookmark modal to add the post to a collection
     setShowBookmarkModal(true)
   }
   
   const handleShare = (e?: React.MouseEvent) => {
-    // Prevent event bubbling if event is provided
     if (e) {
       e.stopPropagation();
     }
-    
-    // Open the share modal
     setShowShareModal(true)
   }
 
@@ -110,23 +100,33 @@ const PostCard: React.FC<PostCardProps> = ({ post, onViewPost }) => {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setShowActions(!showActions)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowActions(!showActions);
+                  console.log('More button clicked, showActions:', !showActions);
+                }}
                 className="h-8 w-8 hover:bg-muted/50"
+                data-testid="post-more-button"
               >
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
-              
               {showActions && (
                 <PostActions
                   post={post}
-                  onClose={() => setShowActions(false)}
+                  onClose={() => {
+                    console.log('Closing actions menu');
+                    setShowActions(false);
+                  }}
+                  onEdit={() => {
+                    setShowEditModal(true);
+                    setShowActions(false);
+                  }}
                 />
               )}
             </div>
           )}
         </div>
       </div>
-
       {/* Content */}
       <div 
         className="px-4 sm:px-6 py-4 sm:py-5 post-gradient-bg cursor-pointer"
@@ -136,7 +136,6 @@ const PostCard: React.FC<PostCardProps> = ({ post, onViewPost }) => {
           className="text-card-foreground leading-relaxed text-sm sm:text-base"
           dangerouslySetInnerHTML={{ __html: processHashtags(post.content) }}
         />
-        
         {/* Tags */}
         {post.tags.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-4">
@@ -145,7 +144,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onViewPost }) => {
                 key={tag}
                 className="inline-block px-3 py-1.5 bg-primary/10 text-primary text-xs font-medium rounded-full border border-primary/20 hover:bg-primary/20 transition-colors cursor-pointer"
                 onClick={(e) => {
-                  e.stopPropagation(); // Prevent triggering the parent's onClick
+                  e.stopPropagation();
                   window.location.href = `/hashtag/${tag}`;
                 }}
               >
@@ -155,14 +154,12 @@ const PostCard: React.FC<PostCardProps> = ({ post, onViewPost }) => {
           </div>
         )}
       </div>
-
       {/* Images */}
       {post.images.length > 0 && (
         <div onClick={() => onViewPost && onViewPost(post._id)} className="cursor-pointer">
           <ImageGallery images={post.images} />
         </div>
       )}
-
       {/* Actions */}
       <div className="px-4 sm:px-6 py-3 sm:py-4 border-t border-border/60 post-gradient-header">
         <div className="flex items-center justify-between">
@@ -175,7 +172,6 @@ const PostCard: React.FC<PostCardProps> = ({ post, onViewPost }) => {
               <Heart className={`h-5 w-5 ${isLiked ? 'fill-red-500 text-red-500' : ''}`} />
               <span className="text-sm">{likeCount || 0}</span>
             </button>
-            
             <button
               onClick={() => setShowComments(!showComments)}
               className="flex items-center space-x-2 text-muted-foreground hover:text-primary hover:bg-primary/10 hover:border hover:border-primary/20 hover:shadow-sm transition-all duration-200 px-3 py-2 rounded-xl font-medium"
@@ -183,7 +179,6 @@ const PostCard: React.FC<PostCardProps> = ({ post, onViewPost }) => {
               <MessageCircle className="h-5 w-5" />
               <span className="text-sm">Comment</span>
             </button>
-            
             <button
               onClick={(e) => handleShare(e)}
               className="flex items-center space-x-2 text-muted-foreground hover:text-blue-500 hover:bg-blue-50 hover:border hover:border-blue-200 hover:shadow-sm transition-all duration-200 px-3 py-2 rounded-xl font-medium"
@@ -192,7 +187,6 @@ const PostCard: React.FC<PostCardProps> = ({ post, onViewPost }) => {
               <span className="text-sm">Share</span>
             </button>
           </div>
-          
           <button
             onClick={(e) => handleBookmark(e)}
             className={`transition-all duration-200 p-2 rounded-xl ${
@@ -205,7 +199,6 @@ const PostCard: React.FC<PostCardProps> = ({ post, onViewPost }) => {
           </button>
         </div>
       </div>
-
       {/* Comments */}
       {showComments && (
         <div className="border-t border-border">
@@ -215,7 +208,6 @@ const PostCard: React.FC<PostCardProps> = ({ post, onViewPost }) => {
           />
         </div>
       )}
-
       {/* Bookmark Modal */}
       <BookmarkModal 
         isOpen={showBookmarkModal} 
@@ -223,12 +215,17 @@ const PostCard: React.FC<PostCardProps> = ({ post, onViewPost }) => {
         post={post}
         onBookmarkToggle={() => setIsBookmarked(true)}
       />
-      
       {/* Share Modal */}
       <ShareModal
         isOpen={showShareModal}
         onClose={() => setShowShareModal(false)}
         postId={post._id}
+      />
+      {/* Edit Post Modal (always rendered at root of PostCard) */}
+      <SimpleEditPostModal
+        post={post}
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
       />
     </div>
   )

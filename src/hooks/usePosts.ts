@@ -234,16 +234,26 @@ export function useUpdatePost() {
 
   return useMutation({
     mutationFn: async ({ postId, data }: { postId: string; data: { content: string; tags?: string } }) => {
-      const response = await api.patch<Post>(`/posts/${postId}`, data)
-      return response.data
+      console.log(`Attempting direct PATCH to /posts/${postId} with:`, data);
+      
+      // Very simple approach - just send what the backend expects
+      const finalData = {
+        content: data.content,
+        tags: data.tags || ''
+      };
+      
+      // Direct API call with minimal processing
+      const response = await api.patch<Post>(`/posts/${postId}`, finalData);
+      return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['posts'] })
-      toast.success('Post updated successfully!')
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
+      toast.success('Post updated successfully!');
     },
     onError: (error: any) => {
-      const message = error.response?.data?.message || 'Failed to update post'
-      toast.error(message)
+      console.error('Update post error:', error);
+      const message = error.response?.data?.message || 'Failed to update post';
+      toast.error(message);
     },
   })
 }

@@ -43,15 +43,24 @@ apiClient.interceptors.request.use(
       }
     }
     
-    // Print request info for debugging FormData issues
-    if (config.url?.includes('/posts') && config.method === 'post') {
-      console.log('POST request to /posts:', {
-        url: config.url,
-        method: config.method,
-        isFormData: config.data instanceof FormData,
-        headers: config.headers,
-        dataType: typeof config.data
-      });
+    // Print request info for debugging FormData issues and PATCH requests
+    if (config.url?.includes('/posts')) {
+      if (config.method === 'patch') {
+        console.log('PATCH request details:', {
+          url: config.url,
+          method: config.method,
+          headers: config.headers,
+          data: config.data
+        });
+      } else if (config.method === 'post') {
+        console.log('POST request details:', {
+          url: config.url,
+          method: config.method,
+          isFormData: config.data instanceof FormData,
+          headers: config.headers,
+          dataType: typeof config.data
+        });
+      }
     }
     
     return config;
